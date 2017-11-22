@@ -2,19 +2,46 @@ extension PredicateNet {
 
     /// Returns the marking graph of a bounded predicate net.
     public func markingGraph(from marking: MarkingType) -> PredicateMarkingNode<T>? {
-        // Write your code here ...
 
-        // Note that I created the two static methods `equals(_:_:)` and `greater(_:_:)` to help
-        // you compare predicate markings. You can use them as the following:
-        //
-        //     PredicateNet.equals(someMarking, someOtherMarking)
-        //     PredicateNet.greater(someMarking, someOtherMarking)
-        //
-        // You may use these methods to check if you've already visited a marking, or if the model
-        // is unbounded.
+      var transitions = Array(self.transitions)
+      let m0 = PredicateMarkingNode<T>(marking: marking, successors: [:]) //Initialisation marquage initial
+      var marquages_a_traiter = [m0]
+      var marquages_traites = [m0]
 
-        return nil
-    }
+      while (marquages_a_traiter.count != 0) { //Tant qu'il reste des marquages à traiter
+
+        let current_marquage = marquages_a_traiter[0] //On extrait un marquage des marquages_a_traiter pour le traiter
+
+        for i in 0...(transitions.count-1) { // On va itérer sur toutes les transitions
+
+          let array_bindings = transitions[i].fireableBingings(from: current_marquage.marking) //On récupère les bindings possibles
+          var newBinding : PredicateBindingMap<T> = [:] //Initialisation d'une variable pour pouvoir l'ajouter comme successor
+
+          for binding in array_bindings { //On va itérer sur les bindings possibles pour la transitions i
+
+            if let new_shot = transitions[i].fire(from: current_marquage.marking, with: binding) { //Si le tire est possible (ici on obtient un marking)
+              let new_marquage = PredicateMarkingNode<T>(marking: new_shot, successors: [:]) //on met notre nouveau marquage comme un PredicateMarkingNode
+
+              if (marquages_traites.contains(where:{ PredicateNet.greater(new_marquage.marking, $0.marking)}) == true) { //Si on a un nouveau marquage plus grand le model est pas borné
+                return nil //On arrête
+              }
+              if (marquages_traites.contains(where:{ PredicateNet.equals($0.marking, new_marquage.marking)}) == false) { //Si le nouveau marquage que l'on a trouvé n'est pas dans les marquages traités
+                marquages_a_traiter.append(new_marquage) //On le met dans les marquages à traiter
+                marquages_traites.append(new_marquage) //Et dans les marquages traités
+                newBinding[binding] = new_marquage //on met notre nouveau marquage dans un binding avec le binding "binding"
+                current_marquage.successors.updateValue(newBinding, forKey: transitions[i]) //on le met comme successor avec updateValue par la transition t[i]
+              }
+            }
+          } //Fin de l'itération sur les bindings possibles
+        } //Fin de l'itération sur toutes les transitions
+
+      //print(current_marquage.marking)
+      marquages_a_traiter.remove(at: 0) //Une fois qu'on a traité cet élément, on le retire des marquages à traiter
+
+    } //Fin de la boucle while
+      return m0
+  } //fin de la fonction
+
 
     // MARK: Internals
 
@@ -23,10 +50,7 @@ extension PredicateNet {
         for (place, tokens) in lhs {
             guard tokens.count == rhs[place]!.count else { return false }
             for t in tokens {
-                guard tokens.filter({ $0 == t }).count == rhs[place]!.filter({ $0 == t }).count
-                    else {
-                        return false
-                }
+                guard rhs[place]!.contains(t) else { return false }
             }
         }
         return true
@@ -40,10 +64,7 @@ extension PredicateNet {
             guard tokens.count >= rhs[place]!.count else { return false }
             hasGreater = hasGreater || (tokens.count > rhs[place]!.count)
             for t in rhs[place]! {
-                guard tokens.filter({ $0 == t }).count >= rhs[place]!.filter({ $0 == t }).count
-                    else {
-                        return false
-                }
+                guard tokens.contains(t) else { return false }
             }
         }
         return hasGreater
