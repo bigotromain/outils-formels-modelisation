@@ -31,6 +31,14 @@ extension PredicateNet {
                 newBinding[binding] = new_marquage //on met notre nouveau marquage dans un binding avec le binding "binding"
                 current_marquage.successors.updateValue(newBinding, forKey: transitions[i]) //on le met comme successor avec updateValue par la transition t[i]
               }
+              else { //Si il est deja dans marquages_traites
+                for marquages in marquages_traites {
+                  if (PredicateNet.equals(marquages.marking, new_marquage.marking) == true) { //Il faut trouver dans marquages_traites le new_marquage
+                    newBinding[binding] = marquages
+                    current_marquage.successors.updateValue(newBinding, forKey: transitions[i]) //et le mettre comme successor pour le current marquage
+                  }
+                }
+              }
             }
           } //Fin de l'itération sur les bindings possibles
         } //Fin de l'itération sur toutes les transitions

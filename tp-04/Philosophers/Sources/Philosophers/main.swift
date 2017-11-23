@@ -66,4 +66,6 @@ do {
         break;
       }
     }
+    print("Cet état bloquant est : Tous les philosophes ont pris leur fourchette gauche (ou tous ont pris la droite) et tous attendent leur deuxième pour pouvoir manger. On obtient donc un deadlock.")
+
 }
